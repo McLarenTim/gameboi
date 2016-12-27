@@ -2,6 +2,8 @@ import discord
 import asyncio
 from PIL import Image
 
+#test edit
+
 gameboi = discord.Client()   
 
 #############################################################################
