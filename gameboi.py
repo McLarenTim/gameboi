@@ -2,9 +2,8 @@ import discord
 import asyncio
 from PIL import Image
 
-#test edit
-
-gameboi = discord.Client()   
+gameboi = discord.Client()
+# Primary discord object
 
 #############################################################################
 ############################################################################# CLIENT
@@ -15,26 +14,37 @@ async def on_ready():
     print('Gameboi Successfully Booted!')
     print('  -user name: '+gameboi.user.name)
     print('  -user id: '+gameboi.user.id)
+# Prints to terminal on ready
 
 waiting = ([], [], [])
+# A tuple of [challengers], [challengees], and [game] to be initialized, linked by having the same index
+
 @gameboi.event
 async def on_message(message):
+# Triggers on any message
     if message.author in Game.currently_playing:
+    # If author is in a game, send the message to his respective game object and print all its outputs
         await send_list(message.channel, Game.currently_playing[message.author].play(message.content, message.author))
+
     elif message.author in waiting[1]:
+    # If author is a challengee, then his response determines whether he and the challenger enters a game or not
         i = waiting[1].index(message.author)
         p1 = waiting[0].pop(i)
         p2 = waiting[1].pop(i)
         if message.content.lower() == "yes":
+        # If yes and yes only, then start the game
             thegame = waiting[2].pop(i)
             await gameboi.send_message(message.channel, "Launching "+thegame.name)
             game = thegame(p1, p2)
             await send_list(message.channel, game.init_output)
         else:
             await gameboi.send_message(message.channel, "Game challenge has been declined")
+
     elif message.content.startswith(gameboi.user.mention):
+        # If gameboi is mentioned, then the message must be a command
         msgiter = iter(message.content.split())
         next(msgiter)
+        # Using an iterator to interpret word by word. Problem is that it will still work if there are extra words behind the command. First word is the '@gameboi' mention so throw that out.
         try:
             current = next(msgiter).lower()
             if current == 'help':
@@ -48,11 +58,14 @@ async def on_message(message):
             elif current == 'play':
                 current = next(msgiter).lower()
                 if message.author in waiting[0]:
+                # You are not allowed to have multiple challenges
                     await gameboi.send_message(message.channel, "You have currently challenged someone to a game\nMention me with 'cancel' to cancel your request")
                 elif current in Game.games_list:
+                # A game is specified
                     thegame = Game.games_list[current]
                     other_player = await find_user(next(msgiter), message.channel)
                     if other_player:
+                        # Make sure that the other player is not the same guy, not gameboi, not playing something else, and not responding to another challenge
                         if other_player == message.author:
                             await gameboi.send_message(message.channel, "Congratulations, you just played yourself")
                         elif other_player == gameboi.user:
@@ -62,6 +75,7 @@ async def on_message(message):
                         elif other_player in waiting[0] or other_player in waiting[1]:
                             await gameboi.send_message(message.channel, "User is currently challenging someone else or being challenged by someone else")
                         else:
+                        # Send the two to waiting
                             await gameboi.send_message(message.channel, other_player.mention+"! "+message.author.name+" has challenged you to a game of "+thegame.name+"!\nType 'yes' to accept or anything else to decline")
                             waiting[0].append(message.author)
                             waiting[1].append(other_player)
@@ -69,6 +83,7 @@ async def on_message(message):
                 else:
                     await gameboi.send_message(message.channel, "Game not found.\nMention me with 'games' to see the list of games")
             elif current == 'cancel':
+            # Allows user to cancel challenges they've issued
                 if message.author in waiting[0]:
                     i = waiting[0].index(message.author)
                     waiting[0].pop(i)
@@ -77,14 +92,14 @@ async def on_message(message):
                     await gameboi.send_message(message.channel, "Game challenge canceled")
                 else:
                     await gameboi.send_message(message.channel, "You have not challenged anyone to a game")
-            elif current == 'imgtest':
-                await gameboi.send_file(message.channel, fp="connect4_background.png")
             else:
                 await gameboi.send_message(message.channel, "Command not found.\n'"+gameboi.user.mention+" help' to see commands.")
         except StopIteration:
+            # A wierd way to ignore malformed commands
             await gameboi.send_message(message.channel, "Bad Command.\n'"+gameboi.user.mention+" help' to see commands.")
 
 async def find_user(thename, thechannel):
+    # A helper method to find online members
     for person in thechannel.server.members:
         if person.nick==thename or person.name==thename or person.mention==thename:
             if person.status != discord.Status.online:
@@ -96,6 +111,7 @@ async def find_user(thename, thechannel):
         await gameboi.send_message(thechannel, "User not found")
 
 async def send_list(thechannel, thelist):
+    # A way to send the list of outputs spit out by a game object, and can upload .png's
     if thelist:
         for item in thelist:
             if ".png" in item:
@@ -108,8 +124,18 @@ async def send_list(thechannel, thelist):
 #############################################################################
 
 class Game:
+    # The currently_playing dictionary links players to their current game objects, is the only reference that exists of game instances. When deleted from this dictionary, the game is gone
     currently_playing = {}
+    # A dictionary of games available to play. All games are added here with their keys being their game name.
     games_list = {}
+
+# All games must have 
+# a name (a string) and add itself to Game.games_list
+# an init_output (starting messages to the channel when the game is initialized)
+# placed the two players into Game.currently_playing
+# a play method that returns a list of outputs and takes a message string and a user object who sent the message
+# upon exit pop all the members from Game.currently_playing (and as a result all references to this object)
+# and other stuff i might be forgetting. Example game below
 
 class connect4(Game):
     name = "connect4"
@@ -236,4 +262,5 @@ Game.games_list[connect4.name] = connect4
 ############################################################################# RUN
 #############################################################################
 
-gameboi.run('MjYyODE4Mzg4MDk3NzYxMjgw.C0JAOQ.p5v3J7zFVhzmtfZKW4yX_7QHF6c')
+gameboi.run('token')
+# The token of the discord app that is registered
