@@ -22,9 +22,9 @@ class Lobby:
 class WaitingLobby(Lobby):
     def __init__(self, game, people):
         super().__init__(people)
-        self.game = game
         for person in people:
             Lobby.idsInLobby[person.id] = self
+        self.game = game
         self.checklist = set(people[1:])
         peoplestr = ""
         for person in people[1:]:
@@ -38,8 +38,8 @@ class WaitingLobby(Lobby):
         elif content == 'yes' and message.author in self.checklist:
             self.checklist.remove(message.author)
             if len(self.checklist) == 0:
-                ## TODO start the game already proabably have to return the game's own initMessage
-                return []
+                newGame = self.game(self.people)
+                return [self.game.name + " started."] + newGame.initMessage
             else:
                 return [message.author.name + " has confirmed. " + str(len(self.checklist)) + " more people needed."]
 
@@ -53,14 +53,19 @@ class countToThree(GameLobby):
     numPlayers = 3
     def __init__(self, people):
         super().__init__(people)
+        for person in people:
+            Lobby.idsInLobby[person.id] = self
         self.count = 0
+        self.goal = 3
+        self.initMessage = ["Type 'yee' (anyone of you) to advance the count to 3. Current count at: " + str(self.count)]
     def eval(self, message):
-        if message.content.lower == ("yee"):
+        print(message.content)
+        if message.content.lower() == ("yee"):
             self.count += 1
-        if self.count >= 3:
-            self.close()
-            return ["Yay yall counted to three!"]
-        return ["Current count at: " + str(self.count)]
+            if self.count >= self.goal:
+                self.close()
+                return ["Yay yall counted to three!"]
+            return ["Current count at: " + str(self.count)]
 
 GameLobby.gamesList[countToThree.name] = countToThree
 
