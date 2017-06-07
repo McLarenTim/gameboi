@@ -1,5 +1,4 @@
 import discord
-from PIL import Image
 
 gameboi = discord.Client()
 
@@ -49,7 +48,7 @@ class GameLobby(Lobby):
     numPlayers = 0
 
 class countToThree(GameLobby):
-    name = "countToThree"
+    name = "Co-op Counting"
     numPlayers = 3
     def __init__(self, people):
         super().__init__(people)
@@ -94,29 +93,32 @@ async def on_message(message):
                     gamesstr = gamesstr + "\n-" + game
                 await gameboi.send_message(message.channel, gamesstr)
             elif command == 'play':
-                gameName = next(msgIter)
-                if not (gameName in GameLobby.gamesList):
+                gameAndPeople = list(msgIter)
+                wIndex = gameAndPeople.index('with')
+                gameName = " ".join(gameAndPeople[:wIndex])
+                inviteList = gameAndPeople[wIndex+1:]
+                if not (gameName in sGameLobby.gamesList):
                     raise GameboiException("Game name not found. Type '" + gameboi.user.mention + " games' : see list of game names.")
                 else:
                     game = GameLobby.gamesList[gameName]
-                    people = [message.author]
-                    for name in msgIter:
-                        if name.lower() == 'with':  # TODO using "with" to parse game names with spaces
-                            continue
+                    players = [message.author]
+                    for name in inviteList:
                         person = findUser(name, message.channel)
-                        if person in people:
+                        if person in players:
                             raise GameboiException("Duplicate players found.")
-                        people.append(person)
-                    if len(people) != game.numPlayers:
+                        if person.id in Lobby.idsInLobby:
+                            raise GameboiException(person.name + " is already in a game.")
+                        players.append(person)
+                    if len(players) != game.numPlayers:
                         raise GameboiException("Wrong number of players for " + gameName + ". Need " + str(game.numPlayers) + " more players to confirm.")
                     else:
-                        newLobby = WaitingLobby(game, people)
+                        newLobby = WaitingLobby(game, players)
                         await sendOutputs(message.channel, newLobby.initMessage)
             else:
                 raise GameboiException ("Command not found. \nType '"+gameboi.user.mention+" help' to see usage of commands.")
         except GameboiException as ge:
             await gameboi.send_message(message.channel, "Error: " + str(ge))
-        except StopIteration:
+        except (StopIteration, ValueError):
             await gameboi.send_message(message.channel, "Type '"+gameboi.user.mention+" help' to see usage of commands.")
 
 def findUser(theName, theChannel):
