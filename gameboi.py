@@ -46,7 +46,8 @@ class WaitingLobby(Lobby):
 class GameLobby(Lobby):
     gamesList = {}
     name = ""
-    numPlayers = 0
+    minPlayers = 0
+    maxPlayers = 0
 
 @gameboi.event
 async def on_ready():
@@ -71,10 +72,10 @@ async def on_message(message):
                 gamesstr = "Games you can play: "
                 for game in GameLobby.gamesList:
                     gamesstr = gamesstr + "\n-" + game + ". "
-                    maxPlayers = GameLobby.gamesList[game].numPlayers[1]
-                    minPlayers = GameLobby.gamesList[game].numPlayers[0]
-                    if maxPlayers-minPlayers > 1:
-                        gamesstr += str(minPlayers) + " to " + str(maxPlayers-1) + " players."
+                    maxPlayers = GameLobby.gamesList[game].maxPlayers
+                    minPlayers = GameLobby.gamesList[game].minPlayers
+                    if maxPlayers-minPlayers > 0:
+                        gamesstr += str(minPlayers) + " to " + str(maxPlayers) + " players."
                     else:
                         gamesstr += str(minPlayers) + " players"
                 await gameboi.send_message(message.channel, gamesstr)
@@ -86,9 +87,9 @@ async def on_message(message):
                 if not (gameName in GameLobby.gamesList):
                     raise GameboiException("Game name not found. Type '" + gameboi.user.mention + " games' : see list of game names.")
                 game = GameLobby.gamesList[gameName]
-                if not (game.numPlayers[0] <= (len(inviteList)+1) < game.numPlayers[1]):
-                    if game.numPlayers[1]-game.numPlayers[0] > 1:
-                        raise GameboiException("Wrong number of players for " + gameName + ". Need between " + str(game.numPlayers[0]) + " to " + str(game.numPlayers[1]-1) + " players.")
+                if not (game.minPlayers <= (len(inviteList)+1) <= game.maxPlayers):
+                    if game.maxPlayers-game.minPlayers > 0:
+                        raise GameboiException("Wrong number of players for " + gameName + ". Need between " + str(game.minPlayers) + " to " + str(game.maxPlayers) + " players.")
                     else:
                         raise GameboiException("Wrong number of players for " + gameName + ". Need " + str(game.numPlayers[0]) + " players.")
                 players = [message.author]
@@ -135,14 +136,15 @@ async def sendOutputs(thechannel, thelist):
 
 class countToThree(GameLobby):
     name = "Co-op Counting"
-    numPlayers = (2, 4)
+    minPlayers = 2
+    maxPlayers = 3
     def __init__(self, people):
         super().__init__(people)
         for person in people:
             Lobby.idsInLobby[person.id] = self
         self.count = 0
         self.goal = 3
-        self.initMessage = ["Type 'yee' (anyone of you) to advance the count to 3. Current count at: " + str(self.count)]
+        self.initMessage = ["Type 'yee' (anyone of you) to advance the count to " + str(self.goal) + ". Current count at: " + str(self.count)]
     def eval(self, message):
         print(message.content)
         if message.content.lower() == ("yee"):
