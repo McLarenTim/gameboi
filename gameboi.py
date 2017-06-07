@@ -2,8 +2,9 @@ import discord
 
 gameboi = discord.Client()
 
+
 #############################################################################
-############################################################################# Dennis Feng
+############################################################################# CLIENT
 #############################################################################
 
 class GameboiException(Exception):
@@ -47,27 +48,6 @@ class GameLobby(Lobby):
     name = ""
     numPlayers = 0
 
-class countToThree(GameLobby):
-    name = "Co-op Counting"
-    numPlayers = 3
-    def __init__(self, people):
-        super().__init__(people)
-        for person in people:
-            Lobby.idsInLobby[person.id] = self
-        self.count = 0
-        self.goal = 3
-        self.initMessage = ["Type 'yee' (anyone of you) to advance the count to 3. Current count at: " + str(self.count)]
-    def eval(self, message):
-        print(message.content)
-        if message.content.lower() == ("yee"):
-            self.count += 1
-            if self.count >= self.goal:
-                self.close()
-                return ["Yay yall counted to three!"]
-            return ["Current count at: " + str(self.count)]
-
-GameLobby.gamesList[countToThree.name] = countToThree
-
 @gameboi.event
 async def on_ready():
     print('Gameboi successfully booted!')
@@ -97,7 +77,7 @@ async def on_message(message):
                 wIndex = gameAndPeople.index('with')
                 gameName = " ".join(gameAndPeople[:wIndex])
                 inviteList = gameAndPeople[wIndex+1:]
-                if not (gameName in sGameLobby.gamesList):
+                if not (gameName in GameLobby.gamesList):
                     raise GameboiException("Game name not found. Type '" + gameboi.user.mention + " games' : see list of game names.")
                 else:
                     game = GameLobby.gamesList[gameName]
@@ -109,7 +89,7 @@ async def on_message(message):
                         if person.id in Lobby.idsInLobby:
                             raise GameboiException(person.name + " is already in a game.")
                         players.append(person)
-                    if len(players) != game.numPlayers:
+                    if not (len(players) in game.numPlayers):
                         raise GameboiException("Wrong number of players for " + gameName + ". Need " + str(game.numPlayers) + " more players to confirm.")
                     else:
                         newLobby = WaitingLobby(game, players)
@@ -141,5 +121,38 @@ async def sendOutputs(thechannel, thelist):
             else:
                 await gameboi.send_message(thechannel, item)
 
+
+#############################################################################
+############################################################################# GAMES
+#############################################################################
+
+class countToThree(GameLobby):
+    name = "Co-op Counting"
+    numPlayers = range(2, 4)
+    def __init__(self, people):
+        super().__init__(people)
+        for person in people:
+            Lobby.idsInLobby[person.id] = self
+        self.count = 0
+        self.goal = 3
+        self.initMessage = ["Type 'yee' (anyone of you) to advance the count to 3. Current count at: " + str(self.count)]
+    def eval(self, message):
+        print(message.content)
+        if message.content.lower() == ("yee"):
+            self.count += 1
+            if self.count >= self.goal:
+                self.close()
+                return ["Yay yall counted to three!"]
+            return ["Current count at: " + str(self.count)]
+GameLobby.gamesList[countToThree.name] = countToThree
+
+
+
+#############################################################################
+############################################################################# RUN
+#############################################################################
+
 # gameboi.run("MjYyODE4Mzg4MDk3NzYxMjgw.DBY6Rw.ugTBLNQMhX7ImQ0sgrS4CPAI-Mg") #runs on account "gameboi"
 gameboi.run("MjUzMzA3ODIwNjk3NDUyNTQ1.DBY7VQ.ABcabZxrv0JDU722RO2YuWn07L0")  # runs on account "testboi"
+
+
