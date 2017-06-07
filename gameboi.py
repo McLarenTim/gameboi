@@ -29,7 +29,7 @@ class WaitingLobby(Lobby):
         peoplestr = ""
         for person in people[1:]:
             peoplestr += person.mention + " "
-        self.initMessage.append("" + people[0].mention + " has challenged " + peoplestr + "to a game of " + game.name + "!\n You must all type 'yes' to begin the game. You may type 'no' to decline.")
+        self.initMessage.append("" + people[0].mention + " has challenged " + peoplestr + "to a game of " + game.name + "!\n You must all type 'yes' to begin the game. Anyone may type 'no' to decline or cancel.")
     def eval(self, message):
         content = message.content.lower()
         if content == 'no':
@@ -96,14 +96,14 @@ async def on_message(message):
                     game = GameLobby.gamesList[gameName]
                     people = [message.author]
                     for name in msgIter:
-                        if name.lower() == 'with': # TODO using "with" to parse game names with spaces
+                        if name.lower() == 'with':  # TODO using "with" to parse game names with spaces
                             continue
                         person = findUser(name, message.channel)
                         if person in people:
                             raise GameboiException("Duplicate players found.")
                         people.append(person)
                     if len(people) != game.numPlayers:
-                        raise GameboiException("Wrong number of players for " + gameName + ". Need " + str(game.numPlayers) + " players.")
+                        raise GameboiException("Wrong number of players for " + gameName + ". Need " + str(game.numPlayers) + " more players to confirm.")
                     else:
                         newLobby = WaitingLobby(game, people)
                         await sendOutputs(message.channel, newLobby.initMessage)
