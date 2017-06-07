@@ -41,7 +41,7 @@ class WaitingLobby(Lobby):
                 newGame = self.game(self.people)
                 return [self.game.name + " started."] + newGame.initMessage
             else:
-                return [message.author.name + " has confirmed. " + str(len(self.checklist)) + " more people needed."]
+                return [message.author.name + " has confirmed. " + str(len(self.checklist)) + " more people needed to confirm."]
 
 class GameLobby(Lobby):
     gamesList = {}
@@ -70,7 +70,13 @@ async def on_message(message):
             elif command == 'games':
                 gamesstr = "Games you can play: "
                 for game in GameLobby.gamesList:
-                    gamesstr = gamesstr + "\n-" + game
+                    gamesstr = gamesstr + "\n-" + game + ". "
+                    maxPlayers = GameLobby.gamesList[game].numPlayers[1]
+                    minPlayers = GameLobby.gamesList[game].numPlayers[0]
+                    if maxPlayers-minPlayers > 1:
+                        gamesstr += str(minPlayers) + " to " + str(maxPlayers-1) + " players."
+                    else:
+                        gamesstr += str(minPlayers) + " players"
                 await gameboi.send_message(message.channel, gamesstr)
             elif command == 'play':
                 gameAndPeople = list(msgIter)
@@ -79,23 +85,24 @@ async def on_message(message):
                 inviteList = gameAndPeople[wIndex+1:]
                 if not (gameName in GameLobby.gamesList):
                     raise GameboiException("Game name not found. Type '" + gameboi.user.mention + " games' : see list of game names.")
-                else:
-                    game = GameLobby.gamesList[gameName]
-                    players = [message.author]
-                    for name in inviteList:
-                        person = findUser(name, message.channel)
-                        if person in players:
-                            raise GameboiException("Duplicate players found.")
-                        if person.id in Lobby.idsInLobby:
-                            raise GameboiException(person.name + " is already in a game.")
-                        players.append(person)
-                    if not (len(players) in game.numPlayers):
-                        raise GameboiException("Wrong number of players for " + gameName + ". Need " + str(game.numPlayers) + " more players to confirm.")
+                game = GameLobby.gamesList[gameName]
+                if not (game.numPlayers[0] <= (len(inviteList)+1) < game.numPlayers[1]):
+                    if game.numPlayers[1]-game.numPlayers[0] > 1:
+                        raise GameboiException("Wrong number of players for " + gameName + ". Need between " + str(game.numPlayers[0]) + " to " + str(game.numPlayers[1]-1) + " players.")
                     else:
-                        newLobby = WaitingLobby(game, players)
-                        await sendOutputs(message.channel, newLobby.initMessage)
+                        raise GameboiException("Wrong number of players for " + gameName + ". Need " + str(game.numPlayers[0]) + " players.")
+                players = [message.author]
+                for name in inviteList:
+                    person = findUser(name, message.channel)
+                    if person in players:
+                        raise GameboiException("Duplicate players found.")
+                    if person.id in Lobby.idsInLobby:
+                        raise GameboiException(person.name + " is already in a game.")
+                    players.append(person)
+                newLobby = WaitingLobby(game, players)
+                await sendOutputs(message.channel, newLobby.initMessage)
             else:
-                raise GameboiException ("Command not found. \nType '"+gameboi.user.mention+" help' to see usage of commands.")
+                raise GameboiException("Command not found. \nType '"+gameboi.user.mention+" help' to see usage of commands.")
         except GameboiException as ge:
             await gameboi.send_message(message.channel, "Error: " + str(ge))
         except (StopIteration, ValueError):
@@ -128,7 +135,7 @@ async def sendOutputs(thechannel, thelist):
 
 class countToThree(GameLobby):
     name = "Co-op Counting"
-    numPlayers = range(2, 4)
+    numPlayers = (2, 4)
     def __init__(self, people):
         super().__init__(people)
         for person in people:
@@ -152,7 +159,7 @@ GameLobby.gamesList[countToThree.name] = countToThree
 ############################################################################# RUN
 #############################################################################
 
-# gameboi.run("MjYyODE4Mzg4MDk3NzYxMjgw.DBY6Rw.ugTBLNQMhX7ImQ0sgrS4CPAI-Mg") #runs on account "gameboi"
+# gameboi.run("MjYyODE4Mzg4MDk3NzYxMjgw.DBY6Rw.ugTBLNQMhX7ImQ0sgrS4CPAI-Mg")  # runs on account "gameboi"
 gameboi.run("MjUzMzA3ODIwNjk3NDUyNTQ1.DBY7VQ.ABcabZxrv0JDU722RO2YuWn07L0")  # runs on account "testboi"
 
 
