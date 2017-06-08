@@ -25,8 +25,6 @@ class Lobby:
 class WaitingLobby(Lobby):
     def __init__(self, game, people):
         super().__init__(people)
-        for person in people:
-            Lobby.idsInLobby[person.id] = self
         self.game = game
         self.checklist = set(people[1:])
         peoplestr = ""
