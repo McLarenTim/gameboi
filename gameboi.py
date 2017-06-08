@@ -8,6 +8,8 @@ gameboi = discord.Client()
 ############################################################################# CLIENT
 #############################################################################
 
+## TODO move non gameboi package stuff into new file
+
 class GameboiException(Exception):
     pass
 
@@ -277,7 +279,6 @@ GameLobby.gamesList[connect4.name] = connect4
 ############################################################################# RUN
 #############################################################################
 
-# gameboi.run("MjYyODE4Mzg4MDk3NzYxMjgw.DBY6Rw.ugTBLNQMhX7ImQ0sgrS4CPAI-Mg")  # runs on account "gameboi"
-gameboi.run("MjUzMzA3ODIwNjk3NDUyNTQ1.DBY7VQ.ABcabZxrv0JDU722RO2YuWn07L0")  # runs on account "testboi"
-
-
+keyFile = open("bot_account_keys.txt", 'r')
+key = keyFile.readline().rstrip('\n')
+gameboi.run(key)
