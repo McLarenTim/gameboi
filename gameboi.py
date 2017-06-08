@@ -1,4 +1,5 @@
 import discord
+from PIL import Image
 
 gameboi = discord.Client()
 
@@ -14,6 +15,8 @@ class Lobby:
     idsInLobby = {}
     def __init__(self, people):
         self.people = people
+        for person in people:
+            Lobby.idsInLobby[person.id] = self
         self.initMessage = []
     def close(self):
         for person in self.people:
@@ -97,6 +100,8 @@ async def on_message(message):
                     person = findUser(name, message.channel)
                     if person in players:
                         raise GameboiException("Duplicate players found.")
+                    if person == gameboi.user:
+                        raise GameboiException("Thanks, but no thanks.")
                     if person.id in Lobby.idsInLobby:
                         raise GameboiException(person.name + " is already in a game.")
                     players.append(person)
@@ -121,7 +126,6 @@ def findUser(theName, theChannel):
         raise GameboiException("User not found: " + theName)
 
 async def sendOutputs(thechannel, thelist):
-    # A way to send the list of outputs spit out by a game object, and can upload .png's
     if thelist:
         for item in thelist:
             if ".png" in item:
@@ -140,13 +144,10 @@ class countToThree(GameLobby):
     maxPlayers = 3
     def __init__(self, people):
         super().__init__(people)
-        for person in people:
-            Lobby.idsInLobby[person.id] = self
         self.count = 0
         self.goal = 3
         self.initMessage = ["Type 'yee' (anyone of you) to advance the count to " + str(self.goal) + ". Current count at: " + str(self.count)]
     def eval(self, message):
-        print(message.content)
         if message.content.lower() == ("yee"):
             self.count += 1
             if self.count >= self.goal:
@@ -155,6 +156,123 @@ class countToThree(GameLobby):
             return ["Current count at: " + str(self.count)]
 GameLobby.gamesList[countToThree.name] = countToThree
 
+class connect4(GameLobby):
+    name = "Connect Four"
+    minPlayers = 2
+    maxPlayers = 2
+    activeGamenumbers = []
+    red = Image.open("connect4_red.png")
+    blue = Image.open("connect4_blue.png")
+    def __init__(self, people):
+        super().__init__(people)
+        self.currentPlayer = 0
+        self.gameNumber = 0
+        while self.gameNumber in connect4.activeGamenumbers:
+            self.gameNumber += 1
+        connect4.activeGamenumbers.append(self.gameNumber)
+        self.board = []
+        for _ in range(6):
+            row = []
+            for _ in range(7):
+                row.append('')
+            self.board.append(row)
+        self.rowlength = len(self.board[0])
+        self.collength = len(self.board)
+        self.image = Image.open("connect4_background.png")
+        self.image.save("connect4_game_" + str(self.gameNumber) + ".png")
+        self.initMessage = ["connect4_game_" + str(self.gameNumber) + ".png", "Game Instructions: \n- Get 4 pieces in a row! \n- Type the number of the column to drop a piece! \n- 'concede' to give up", self.people[self.currentPlayer].name + ", it's your turn!"]
+    def eval(self, message):
+        if message.content.lower() == "concede":
+            winner = self.people[1-self.people.index(message.author)]
+            return self.gameover(winner)
+        elif self.people[self.currentPlayer] == message.author:
+            if message.content in [str(i) for i in range(1,self.rowlength+1)]:
+                col = int(message.content)-1
+                row = -1
+                while (row+1)<self.collength and not self.board[row+1][col]:
+                    row += 1
+                if row == -1:
+                    return ["Column is full"]
+                self.updateBoard(row, col)
+                if self.check_row_win(row, col) or self.check_col_win(row, col) or self.check_leftdiag_win(row, col) or self.check_rightdiag_win(row, col):
+                    return self.gameover(self.people[self.currentPlayer])
+                if self.check_stalemate():
+                    return self.gameover(None)
+                self.currentPlayer = 1 - self.currentPlayer
+                return ["connect4_game_" + str(self.gameNumber) + ".png", self.people[self.currentPlayer].name + ", it's your turn!"]
+    def gameover(self, winner):
+        self.close()
+        connect4.activeGamenumbers.pop(self.gameNumber)
+        if not winner:
+            winnertext = "Stalemate!"
+        else:
+            winnertext = winner.name+" is the winner!"
+        return ["connect4_game_" + str(self.gameNumber) + ".png", winnertext]
+    #Helper Functions
+    def updateBoard(self, row, col):
+        if self.currentPlayer == 0:
+            piecename = 'r'
+            pieceimg = connect4.red
+        else:
+            piecename = 'b'
+            pieceimg = connect4.blue
+        self.board[row][col] = piecename
+        self.image.paste(pieceimg, (col*pieceimg.width, row*pieceimg.width), mask=pieceimg)
+        self.image.save("connect4_game_" + str(self.gameNumber) + ".png")
+    def check_row_win(self, row, col):
+        color = self.board[row][col]
+        combo = 0
+        for i in range(self.rowlength):
+            if self.board[row][i]==color:
+                combo += 1
+                if combo==4:
+                    return True
+            else:
+                combo = 0
+        return False
+    def check_col_win(self, row, col):
+        color = self.board[row][col]
+        combo = 0
+        for i in range(self.collength):
+            if self.board[i][col]==color:
+                combo += 1
+                if combo==4:
+                    return True
+            else:
+                combo = 0
+        return False
+    def check_leftdiag_win(self, row, col):
+        color = self.board[row][col]
+        combo = 0
+        i, j = row - min(row, col), col - min(row, col)
+        while i<self.collength and j<self.rowlength:
+            if self.board[i][j]==color:
+                combo += 1
+                if combo==4:
+                    return True
+            else:
+                combo = 0
+            i, j = i+1, j+1
+        return False
+    def check_rightdiag_win(self, row, col):
+        color = self.board[row][col]
+        combo = 0
+        i, j = row - min(row, self.rowlength-1-col), col + min(row, self.rowlength-1-col)
+        while i<self.collength and j>=0:
+            if self.board[i][j]==color:
+                combo += 1
+                if combo==4:
+                    return True
+            else:
+                combo = 0
+            i, j = i+1, j-1
+        return False
+    def check_stalemate(self):
+        for i in range(self.rowlength):
+            if not self.board[0][i]:
+                return False
+        return True
+GameLobby.gamesList[connect4.name] = connect4
 
 
 #############################################################################
