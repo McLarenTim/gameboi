@@ -104,10 +104,10 @@ def detectFlush(cards):
     if max(suits) >= 5:
         ofSuit = [c.rank for c in cards if c.suit == suits.index(max(suits))]
         retval = 0
-        multiplier = 1
+        multiplier = 0.01
         for rank in ofSuit[-5:][::-1]:
-            retval += rank * 0.01 ** multiplier
-            multiplier += 1
+            retval += rank * multiplier
+            multiplier *= 0.01
         return retval
     return -1
 
@@ -163,27 +163,48 @@ def detectPair(cards):
             side1 = max([c.rank for c in cards if c.rank != card.rank])
             side2 = max([c.rank for c in cards if c.rank != card.rank and c.rank != side1])
             side3 = max([c.rank for c in cards if c.rank != card.rank and c.rank != side1 and c.rank != side2])
-            return card.rank * 0.01 + side1 * 0.0001 + side2 * 0.000001 + side3 + 0.00000001
+            return card.rank * 0.01 + side1 * 0.0001 + side2 * 0.000001 + side3 * 0.00000001
         lastCard = card
     return -1
 
 def detectHigh(cards):
     retval = 0
-    multiplier = 1
+    multiplier = 0.01
     for card in cards[-5:][::-1]:
-        retval += card.rank * 0.01 ** multiplier
-        multiplier += 1
+        retval += card.rank * multiplier
+        multiplier *= 0.01
     return retval
 
 ##################################################################
 
-d = Deck()
-for _ in range(10):
-    hand = []
-    for j in range(7):
-        hand.append(d.draw())
-    print(sortCards(hand), rateCards(hand))
-    d.refresh()
+# hand = [
+#     Card(0, 2),
+#     Card(1, 3),
+#     Card(2, 5),
+#     Card(3, 6),
+#     Card(1, 6),
+#     Card(2, 7),
+#     Card(3, 8),
+# ]
+# print(rateCards(hand))
 
+# d = Deck()
+# for _ in range(10):
+#     hand = []
+#     for j in range(7):
+#         hand.append(d.draw())
+#     print(sortCards(hand), rateCards(hand))
+#     d.refresh()
+# print("--------------")
+# d = Deck()
+# while True:
+#     hand = []
+#     for j in range(7):
+#         hand.append(d.draw())
+#     x = rateCards(hand)
+#     if x>=8:
+#         print(sortCards(hand), x)
+#         break
+#     d.refresh()
 
 
