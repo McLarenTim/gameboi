@@ -1,5 +1,6 @@
 import discord
 from PIL import Image
+import pokerlib
 
 gameboi = discord.Client()
 
@@ -7,8 +8,6 @@ gameboi = discord.Client()
 #############################################################################
 ############################################################################# CLIENT
 #############################################################################
-
-## TODO move non gameboi package stuff into new file
 
 class GameboiException(Exception):
     pass
@@ -56,6 +55,7 @@ class GameLobby(Lobby):
 async def on_ready():
     print('Gameboi successfully booted!')
     print('Account: "'+gameboi.user.name+'", ID: '+gameboi.user.id)
+    await gameboi.change_presence(game=discord.Game(name="type '@" + gameboi.user.name + " help'"))
 
 @gameboi.event
 async def on_message(message):
@@ -125,13 +125,15 @@ def findUser(theName, theChannel):
     else:
         raise GameboiException("User not found: " + theName)
 
-async def sendOutputs(thechannel, thelist):
+async def sendOutputs(destination, thelist):
     if thelist:
         for item in thelist:
-            if ".png" in item:
-                await gameboi.send_file(thechannel, fp=item)
+            if type(item) == list:
+                await sendOutputs(item[0], item[1:])
+            elif item.endswith(".png"):
+                await gameboi.send_file(destination, fp=item)
             else:
-                await gameboi.send_message(thechannel, item)
+                await gameboi.send_message(destination, item)
 
 
 #############################################################################
@@ -141,11 +143,11 @@ async def sendOutputs(thechannel, thelist):
 class countToThree(GameLobby):
     name = "Co-op Counting"
     minPlayers = 2
-    maxPlayers = 3
+    maxPlayers = 6
     def __init__(self, people):
         super().__init__(people)
         self.count = 0
-        self.goal = 3
+        self.goal = 5
         self.initMessage = ["Type 'yee' (anyone of you) to advance the count to " + str(self.goal) + ". Current count at: " + str(self.count)]
     def eval(self, message):
         if message.content.lower() == ("yee"):
@@ -208,7 +210,6 @@ class connect4(GameLobby):
         else:
             winnertext = winner.name+" is the winner!"
         return ["connect4_game_" + str(self.gameNumber) + ".png", winnertext]
-    #Helper Functions
     def updateBoard(self, row, col):
         if self.currentPlayer == 0:
             piecename = 'r'
@@ -273,6 +274,25 @@ class connect4(GameLobby):
                 return False
         return True
 GameLobby.gamesList[connect4.name] = connect4
+
+class poker(GameLobby):
+    name = "Texas Holdem"
+    minPlayers = 2
+    maxPlayers = 10
+    def __init__(self, people):
+        super().__init__(people)
+        self.count = 0
+        self.goal = 1
+        self.deck = pokerlib.Deck()
+        pmList = []
+        for person in people:
+            pmList.append([person, "Your card this game is: " + str(self.deck.draw())])
+        self.initMessage = ["Type 'yee' to end test."] + pmList
+    def eval(self, message):
+        if message.content.lower() == ("yee"):
+            self.close()
+            return ["Quitting"]
+GameLobby.gamesList[poker.name] = poker
 
 
 #############################################################################
