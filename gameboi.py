@@ -140,7 +140,7 @@ async def sendOutputs(destination, thelist):
 ############################################################################# GAMES
 #############################################################################
 
-class countToThree(GameLobby):
+class coopCounting(GameLobby):
     name = "Co-op Counting"
     minPlayers = 2
     maxPlayers = 6
@@ -148,15 +148,15 @@ class countToThree(GameLobby):
         super().__init__(people)
         self.count = 0
         self.goal = 5
-        self.initMessage = ["Type 'yee' (anyone of you) to advance the count to " + str(self.goal) + ". Current count at: " + str(self.count)]
+        self.initMessage = ["Type 'yee' (any one of you) to advance the count to " + str(self.goal) + ". Current count at: " + str(self.count)]
     def eval(self, message):
         if message.content.lower() == ("yee"):
             self.count += 1
             if self.count >= self.goal:
                 self.close()
-                return ["Yay yall counted to three!"]
+                return ["Yay yall counted to " + str(self.goal) + "!" ]
             return ["Current count at: " + str(self.count)]
-GameLobby.gamesList[countToThree.name] = countToThree
+# GameLobby.gamesList[coopCounting.name] = coopCounting
 
 class connect4(GameLobby):
     name = "Connect Four"
@@ -292,7 +292,7 @@ class poker(GameLobby):
         if message.content.lower() == ("yee"):
             self.close()
             return ["Quitting"]
-GameLobby.gamesList[poker.name] = poker
+# GameLobby.gamesList[poker.name] = poker
 
 
 #############################################################################
