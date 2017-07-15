@@ -291,19 +291,22 @@ class chessgame(GameLobby):
         chessgame.activeGamenumbers.append(self.gameNumber)
         self.imgname = "chessresources/chessgame" + str(self.gameNumber)
         self.board = chess.Board()
-        chessgame.renderBoard(self.board, self.imgname)
+        self.renderBoard(self.board, self.imgname)
         self.initMessage = [self.imgname + ".png", "Game Instructions: \n-"]
-    # def eval(self, message):
-    #     return ["chessresources/chessgame" + str(self.gameNumber) + ".png", self.people[self.currentPlayer].name + ", it's your turn!"]
-    # def gameover(self, winner):
-    #     self.close()
-    #     chess.activeGamenumbers.pop(self.gameNumber)
-    #     if not winner:
-    #         winnertext = "Stalemate!"
-    #     else:
-    #         winnertext = winner.name+" is the winner!"
-    #     return ["chessresources/chessgame" + str(self.gameNumber) + ".png", winnertext]
-    def renderBoard(b, n):
+    def eval(self, message):
+        if message.content.lower() == "concede":
+            winner = self.people[1-self.people.index(message.author)]
+            return self.gameover(winner)
+        return [self.imgname + ".png"]
+    def gameover(self, winner):
+        self.close()
+        chessgame.activeGamenumbers.pop(self.gameNumber)
+        if not winner:
+            winnertext = "Stalemate!"
+        else:
+            winnertext = winner.name+" is the winner!"
+        return [self.imgname + ".png", winnertext]
+    def renderBoard(self, b, n):
         bsvg = b._repr_svg_()
         bfile = open(n + ".svg", "w")
         bfile.write(bsvg)
