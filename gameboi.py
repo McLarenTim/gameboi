@@ -163,8 +163,8 @@ class connect4(GameLobby):
     minPlayers = 2
     maxPlayers = 2
     activeGamenumbers = []
-    red = Image.open("connect4_red.png")
-    blue = Image.open("connect4_blue.png")
+    red = Image.open("connect4resources/connect4red.png")
+    blue = Image.open("connect4resources/connect4blue.png")
     def __init__(self, people):
         super().__init__(people)
         self.currentPlayer = 0
@@ -180,9 +180,9 @@ class connect4(GameLobby):
             self.board.append(row)
         self.rowlength = len(self.board[0])
         self.collength = len(self.board)
-        self.image = Image.open("connect4_background.png")
-        self.image.save("connect4_game_" + str(self.gameNumber) + ".png")
-        self.initMessage = ["connect4_game_" + str(self.gameNumber) + ".png", "Game Instructions: \n- Get 4 pieces in a row! \n- Type the number of the column to drop a piece! \n- 'concede' to give up", self.people[self.currentPlayer].name + ", it's your turn!"]
+        self.image = Image.open("connect4resources/connect4background.png")
+        self.image.save("connect4resources/connect4game" + str(self.gameNumber) + ".png")
+        self.initMessage = ["connect4resources/connect4game" + str(self.gameNumber) + ".png", "Game Instructions: \n- Get 4 pieces in a row! \n- Type the number of the column to drop a piece! \n- 'concede' to give up", self.people[self.currentPlayer].name + ", it's your turn!"]
     def eval(self, message):
         if message.content.lower() == "concede":
             winner = self.people[1-self.people.index(message.author)]
@@ -201,7 +201,7 @@ class connect4(GameLobby):
                 if self.check_stalemate():
                     return self.gameover(None)
                 self.currentPlayer = 1 - self.currentPlayer
-                return ["connect4_game_" + str(self.gameNumber) + ".png", self.people[self.currentPlayer].name + ", it's your turn!"]
+                return ["connect4resources/connect4game" + str(self.gameNumber) + ".png", self.people[self.currentPlayer].name + ", it's your turn!"]
     def gameover(self, winner):
         self.close()
         connect4.activeGamenumbers.pop(self.gameNumber)
@@ -209,7 +209,7 @@ class connect4(GameLobby):
             winnertext = "Stalemate!"
         else:
             winnertext = winner.name+" is the winner!"
-        return ["connect4_game_" + str(self.gameNumber) + ".png", winnertext]
+        return ["connect4resources/connect4game" + str(self.gameNumber) + ".png", winnertext]
     def updateBoard(self, row, col):
         if self.currentPlayer == 0:
             piecename = 'r'
@@ -219,7 +219,7 @@ class connect4(GameLobby):
             pieceimg = connect4.blue
         self.board[row][col] = piecename
         self.image.paste(pieceimg, (col*pieceimg.width, row*pieceimg.width), mask=pieceimg)
-        self.image.save("connect4_game_" + str(self.gameNumber) + ".png")
+        self.image.save("connect4resources/connect4game" + str(self.gameNumber) + ".png")
     def check_row_win(self, row, col):
         color = self.board[row][col]
         combo = 0
@@ -299,6 +299,6 @@ class poker(GameLobby):
 ############################################################################# RUN
 #############################################################################
 
-keyFile = open("bot_account_keys.txt", 'r')
+keyFile = open("botAccountKeys.txt", 'r')
 key = keyFile.readline().rstrip('\n')
 gameboi.run(key)
