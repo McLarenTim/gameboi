@@ -1,4 +1,4 @@
-botAccountKeys.txt
-chesstest.py
+botaccountkeys.txt
 /.idea/*
 /__pycache__/*
+/gameboienv/*

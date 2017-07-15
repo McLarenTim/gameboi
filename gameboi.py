@@ -299,6 +299,6 @@ class poker(GameLobby):
 ############################################################################# RUN
 #############################################################################
 
-keyFile = open("botAccountKeys.txt", 'r')
+keyFile = open("botaccountkeys.txt", 'r')
 key = keyFile.readline().rstrip('\n')
 gameboi.run(key)
