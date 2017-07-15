@@ -1,5 +1,8 @@
 import discord
 from PIL import Image
+import chess
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
 import pokerlib
 
 gameboi = discord.Client()
@@ -275,23 +278,57 @@ class connect4(GameLobby):
         return True
 GameLobby.gamesList[connect4.name] = connect4
 
-class poker(GameLobby):
-    name = "Texas Holdem"
+class chessgame(GameLobby):
+    name = "Chess"
     minPlayers = 2
-    maxPlayers = 10
+    maxPlayers = 2
+    activeGamenumbers = []
     def __init__(self, people):
         super().__init__(people)
-        self.count = 0
-        self.goal = 1
-        self.deck = pokerlib.Deck()
-        pmList = []
-        for person in people:
-            pmList.append([person, "Your card this game is: " + str(self.deck.draw())])
-        self.initMessage = ["Type 'yee' to end test."] + pmList
-    def eval(self, message):
-        if message.content.lower() == ("yee"):
-            self.close()
-            return ["Quitting"]
+        self.gameNumber = 0
+        while self.gameNumber in chessgame.activeGamenumbers:
+            self.gameNumber += 1
+        chessgame.activeGamenumbers.append(self.gameNumber)
+        self.imgname = "chessresources/chessgame" + str(self.gameNumber)
+        self.board = chess.Board()
+        chessgame.renderBoard(self.board, self.imgname)
+        self.initMessage = [self.imgname + ".png", "Game Instructions: \n-"]
+    # def eval(self, message):
+    #     return ["chessresources/chessgame" + str(self.gameNumber) + ".png", self.people[self.currentPlayer].name + ", it's your turn!"]
+    # def gameover(self, winner):
+    #     self.close()
+    #     chess.activeGamenumbers.pop(self.gameNumber)
+    #     if not winner:
+    #         winnertext = "Stalemate!"
+    #     else:
+    #         winnertext = winner.name+" is the winner!"
+    #     return ["chessresources/chessgame" + str(self.gameNumber) + ".png", winnertext]
+    def renderBoard(b, n):
+        bsvg = b._repr_svg_()
+        bfile = open(n + ".svg", "w")
+        bfile.write(bsvg)
+        bfile.close()
+        bpic = svg2rlg(n + ".svg")
+        renderPM.drawToFile(bpic, n + ".png")
+GameLobby.gamesList[chessgame.name] = chessgame
+
+# class poker(GameLobby):
+#     name = "Texas Holdem"
+#     minPlayers = 2
+#     maxPlayers = 10
+#     def __init__(self, people):
+#         super().__init__(people)
+#         self.count = 0
+#         self.goal = 1
+#         self.deck = pokerlib.Deck()
+#         pmList = []
+#         for person in people:
+#             pmList.append([person, "Your card this game is: " + str(self.deck.draw())])
+#         self.initMessage = ["Type 'yee' to end test."] + pmList
+#     def eval(self, message):
+#         if message.content.lower() == ("yee"):
+#             self.close()
+#             return ["Quitting"]
 # GameLobby.gamesList[poker.name] = poker
 
 

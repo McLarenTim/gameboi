@@ -7,7 +7,7 @@ b = chess.Board()
 
 n = "test"
 def renderBoard(board, name):
-    bsvg = b._repr_svg_()
+    bsvg = board._repr_svg_()
     bfile = open("chessresources/" + n + ".svg", "w")
     bfile.write(bsvg)
     bfile.close()
