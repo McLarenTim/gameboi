@@ -143,24 +143,6 @@ async def sendOutputs(destination, thelist):
 ############################################################################# GAMES
 #############################################################################
 
-class coopCounting(GameLobby):
-    name = "Co-op Counting"
-    minPlayers = 2
-    maxPlayers = 6
-    def __init__(self, people):
-        super().__init__(people)
-        self.count = 0
-        self.goal = 5
-        self.initMessage = ["Type 'yee' (any one of you) to advance the count to " + str(self.goal) + ". Current count at: " + str(self.count)]
-    def eval(self, message):
-        if message.content.lower() == ("yee"):
-            self.count += 1
-            if self.count >= self.goal:
-                self.close()
-                return ["Yay yall counted to " + str(self.goal) + "!" ]
-            return ["Current count at: " + str(self.count)]
-# GameLobby.gamesList[coopCounting.name] = coopCounting
-
 class connect4(GameLobby):
     name = "Connect Four"
     minPlayers = 2
@@ -313,7 +295,7 @@ class chessgame(GameLobby):
         bfile.close()
         bpic = svg2rlg(n + ".svg")
         renderPM.drawToFile(bpic, n + ".png")
-GameLobby.gamesList[chessgame.name] = chessgame
+# GameLobby.gamesList[chessgame.name] = chessgame
 
 # class poker(GameLobby):
 #     name = "Texas Holdem"
