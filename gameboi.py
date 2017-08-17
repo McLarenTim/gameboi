@@ -34,7 +34,7 @@ class WaitingLobby(Lobby):
         peoplestr = ""
         for person in people[1:]:
             peoplestr += person.mention + " "
-        self.initMessage.append("" + people[0].mention + " has challenged " + peoplestr + "to a game of " + game.name + "!\n You must all type 'yes' to begin the game. Anyone may type 'no' to decline or cancel.")
+        self.initMessage.append("" + people[0].mention + " has challenged " + peoplestr + "to a game of " + game.name + "!\n All challengees must type 'yes' to begin the game. Anyone may type 'no' to decline or cancel.")
     def eval(self, message):
         content = message.content.lower()
         if content == 'no':
@@ -191,7 +191,7 @@ class connect4(GameLobby):
         self.close()
         connect4.activeGamenumbers.pop(self.gameNumber)
         if not winner:
-            winnertext = "Stalemate!"
+            winnertext = "Draw! Good game!"
         else:
             winnertext = winner.name+" is the winner!"
         return ["connect4resources/connect4game" + str(self.gameNumber) + ".png", winnertext]
@@ -274,20 +274,59 @@ class chessgame(GameLobby):
         self.imgname = "chessresources/chessgame" + str(self.gameNumber)
         self.board = chess.Board()
         self.renderBoard(self.board, self.imgname)
-        self.initMessage = [self.imgname + ".png", "Game Instructions: \n-"]
+        self.currentPlayer = 1
+        self.initMessage = [self.imgname + ".png", "Game Instructions: \n"
+                            "- " + self.people[self.currentPlayer].name + " is white.\n"
+                            "- " + self.people[1 - self.currentPlayer].name + " is black.\n- Standard chess rules apply.\n"
+                            "- Type your moves in UCI format. For example, a move from A7 to A8 would be a7a8 or a7a8q if it is a promotion to a queen.\n"
+                            "- Type 'help' during your turn for a list of valid moves."
+                            , self.people[self.currentPlayer].name + ", it's your turn!"] # need game instructions! And say who's which color.
     def eval(self, message):
         if message.content.lower() == "concede":
-            winner = self.people[1-self.people.index(message.author)]
-            return self.gameover(winner)
-        return [self.imgname + ".png"]
-    def gameover(self, winner):
+            concedeWinner = self.people[1-self.people.index(message.author)]
+            return self.gameover(concedeWinner)
+        elif self.people[self.currentPlayer] == message.author:
+            try:
+                playerMove = chess.Move.from_uci(message.content)
+                if playerMove in self.board.legal_moves:
+                    self.board.push(playerMove)
+                    self.renderBoard(self.board, self.imgname)
+                    if self.board.is_game_over(claim_draw=False):
+                        return self.gameover(None)
+                    else:
+                        self.currentPlayer = 1 - self.currentPlayer
+                        retval = [self.imgname + ".png"]
+                        if self.board.is_check():
+                            retval += ["Check!"]
+                        retval += [self.people[self.currentPlayer].name + ", it's your turn!"]
+                else:
+                    retval = ["Move is not legal. Type 'help' for a list of valid moves."]
+                return retval
+            except ValueError:
+                if message.content.lower() == "help":
+                    retval = "Current Legal Moves: concede"
+                    for move in self.board.legal_moves:
+                        retval += ", " + move.uci()
+                    return [retval]
+    def gameover(self, concedeWinner):
         self.close()
         chessgame.activeGamenumbers.pop(self.gameNumber)
-        if not winner:
-            winnertext = "Stalemate!"
+        if not concedeWinner:
+            if self.board.is_checkmate():
+                text = "Checkmate!" + self.people[self.currentPlayer] + "is the winner!"
+            elif self.board.is_stalemate():
+                text = "Stalemate! Good game!"
+            elif self.board.is_insufficient_material():
+                text = "Draw! Insufficient mating material!"
+            elif self.board.is_seventyfive_moves():
+                text = "Draw! 75 move rule!"
+            elif self.board.is_fivefold_repetition():
+                text = "Draw! 5-fold repetition!"
+            else:
+                text = "Player has claimed a draw!" # need to allow players to claim draws due to 3-fold or 50 move rule
         else:
-            winnertext = winner.name+" is the winner!"
-        return [self.imgname + ".png", winnertext]
+            text = concedeWinner.name + " is the winner due to concession!"
+        return [self.imgname + ".png", text]
     def renderBoard(self, b, n):
         bsvg = b._repr_svg_()
         bfile = open(n + ".svg", "w")
@@ -295,7 +334,7 @@ class chessgame(GameLobby):
         bfile.close()
         bpic = svg2rlg(n + ".svg")
         renderPM.drawToFile(bpic, n + ".png")
-# GameLobby.gamesList[chessgame.name] = chessgame
+GameLobby.gamesList[chessgame.name] = chessgame
 
 # class poker(GameLobby):
 #     name = "Texas Holdem"
