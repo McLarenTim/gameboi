@@ -304,16 +304,13 @@ class chessgame(GameLobby):
                 return retval
             except ValueError:
                 if message.content.lower() == "help":
-                    retval = "Current Legal Moves: concede"
-                    for move in self.board.legal_moves:
-                        retval += ", " + move.uci()
-                    return [retval]
+                    return ["Current legal moves: " + ", ".join([m.uci() for m in self.board.legal_moves])]
     def gameover(self, concedeWinner):
         self.close()
         chessgame.activeGamenumbers.pop(self.gameNumber)
         if not concedeWinner:
             if self.board.is_checkmate():
-                text = "Checkmate!" + self.people[self.currentPlayer] + "is the winner!"
+                text = "Checkmate!" + self.people[self.currentPlayer].name + "is the winner!"
             elif self.board.is_stalemate():
                 text = "Stalemate! Good game!"
             elif self.board.is_insufficient_material():
@@ -323,7 +320,7 @@ class chessgame(GameLobby):
             elif self.board.is_fivefold_repetition():
                 text = "Draw! 5-fold repetition!"
             else:
-                text = "Player has claimed a draw!" # need to allow players to claim draws due to 3-fold or 50 move rule
+                text = self.people[self.currentPlayer].name + " has declared a draw!" # need to allow players to claim draws due to 3-fold or 50 move rule
         else:
             text = concedeWinner.name + " is the winner due to concession!"
         return [self.imgname + ".png", text]
